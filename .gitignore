@@ -1,0 +1,17 @@
+# IDE
+.idea
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Misc
+*.cache
+
+# Environment variables
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs
+*.log
