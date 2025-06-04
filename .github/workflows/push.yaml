@@ -12,10 +12,16 @@ jobs:
 
   push:
 
-    name: Push Docker image to Docker Hub
-    runs-on: ubuntu-latest
+    name: Push ${{ matrix.platform }} image to Docker Hub
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
+        platform: [amd64, arm64]
+        include:
+          - platform: amd64
+            runner: ubuntu-24.04
+          - platform: arm64
+            runner: ubuntu-24.04-arm
         image:
           - php8.2-cli-alpine
           - php8.2-nginx-alpine
@@ -45,6 +51,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
+          platforms: linux/${{ matrix.platform }}
           tags: |
               ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-latest
               ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ steps.globals.outputs.HASH }}
