@@ -18,6 +18,7 @@ jobs:
       matrix:
         image:
           - php8.2-cli-alpine
+          - php8.2-nginx-alpine
 
     steps:
 
