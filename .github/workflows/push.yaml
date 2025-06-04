@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           echo "HASH=${{ env.hash }}" >> "${GITHUB_OUTPUT}"
-          echo "IMAGE_NAME=${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/metarisc:${{ matrix.image }}" >> "${GITHUB_OUTPUT}"
+          echo "IMAGE_NAME=metarisc:${{ matrix.image }}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
