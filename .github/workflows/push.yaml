@@ -7,25 +7,18 @@ on:
 
 env:
   hash: $(git rev-parse --short=8 "$GITHUB_SHA")
+  platforms: "amd64 arm64"  
 
 jobs:
 
   push:
 
-    name: Build and Push ${{ matrix.image }} for ${{ matrix.platform }}
-    runs-on: ${{ matrix.runner }}
+    name: Build ${{ matrix.image }} for ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
       matrix:
         platform: [amd64, arm64]
-        include:
-          - platform: amd64
-            runner: ubuntu-24.04
-          - platform: arm64
-            # runner: ubuntu-24.04-arm # Uncomment when arm64 runners are available on GitHub Actions
-            runner: ubuntu-24.04
-        image:
-          - php8.2-cli-alpine
-          - php8.2-nginx-alpine
+        image: [php8.2-cli-alpine, php8.2-nginx-alpine]
 
     steps:
 
@@ -41,10 +34,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set up QEMU for cross-platform builds
-        if: matrix.platform == 'arm64'
-        uses: docker/setup-qemu-action@v3
-
       - name: Login to Scaleway Container Registry
         uses: docker/login-action@v3
         with:
@@ -58,8 +47,54 @@ jobs:
           push: true
           platforms: linux/${{ matrix.platform }}
           tags: |
-              ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-latest
-              ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ steps.globals.outputs.HASH }}
+              ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ matrix.platform }}-latest
+              ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ matrix.platform }}-${{ steps.globals.outputs.HASH }}
           context: ${{ matrix.image }}
           cache-from: type=gha,ref=${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ matrix.platform }}
           cache-to: type=gha,ref=${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ matrix.platform }},mode=max
+
+  manifest:
+
+    name: Create and push multi-arch manifest
+    runs-on: ubuntu-latest
+    needs: push
+    strategy:
+      matrix:
+        image: [php8.2-cli-alpine, php8.2-nginx-alpine]
+
+    steps:
+      
+      - name: Set globals
+        id: globals
+        shell: bash
+        run: |
+          echo "HASH=${{ env.hash }}" >> "${GITHUB_OUTPUT}"
+          echo "IMAGE_NAME=metarisc:${{ matrix.image }}" >> "${GITHUB_OUTPUT}"
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}
+          username: ${{ secrets.SCALEWAY_DOCKER_REGISTRY_USERNAME }}
+          password: ${{ secrets.SCALEWAY_DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Create and push manifest (latest and hash)
+        shell: bash
+        run: |
+          TAGS_LATEST=""
+          TAGS_HASH=""
+          for PLATFORM in ${{ env.platforms }}; do
+            TAGS_LATEST="$TAGS_LATEST ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${PLATFORM}-latest"
+            TAGS_HASH="$TAGS_HASH ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${PLATFORM}-${{ steps.globals.outputs.HASH }}"
+          done
+
+          docker buildx imagetools create \
+            --tag ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-latest \
+            $TAGS_LATEST
+
+          docker buildx imagetools create \
+            --tag ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ steps.globals.outputs.HASH }} \
+            $TAGS_HASH
