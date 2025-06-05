@@ -53,7 +53,7 @@ RUN envsubst '${PORT}' < /etc/nginx/conf.d/default_template.conf > /etc/nginx/co
 RUN rm /etc/nginx/conf.d/default_template.conf
 
 # Configure a healthcheck to validate that everything is up & running
-HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:8080/fpm-ping
+HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:${PORT}/fpm-ping
 
 # Let supervisord start nginx & php-fpm
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
