@@ -22,6 +22,9 @@ COPY server/php_core.ini $PHP_INI_DIR/conf.d/core.ini
 COPY server/php_date.ini $PHP_INI_DIR/conf.d/date.ini
 COPY server/php_opcache.ini $PHP_INI_DIR/conf.d/opcache.ini
 
+# Configure supervisord
+COPY server/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 # PHP Postgresql Database Extensions
 RUN apk add --no-cache postgresql-dev \
     && docker-php-ext-configure pgsql --with-pgsql=/usr/local/pgsql \
@@ -51,3 +54,6 @@ RUN rm /etc/nginx/conf.d/default_template.conf
 
 # Configure a healthcheck to validate that everything is up & running
 HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:8080/fpm-ping
+
+# Let supervisord start nginx & php-fpm
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
