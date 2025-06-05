@@ -1,18 +1,14 @@
 name: Publish Docker image
-
+  
 on:
   push:
     branches:
       - main
 
-env:
-  hash: $(git rev-parse --short=8 "$GITHUB_SHA")
-  platforms: "amd64 arm64"  
-
 jobs:
 
   push:
-
+    
     name: Build ${{ matrix.image }} for ${{ matrix.platform }}
     runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
@@ -23,13 +19,6 @@ jobs:
     steps:
 
       - uses: actions/checkout@v4
-
-      - name: Set globals
-        id: globals
-        shell: bash
-        run: |
-          echo "HASH=${{ env.hash }}" >> "${GITHUB_OUTPUT}"
-          echo "IMAGE_NAME=metarisc:${{ matrix.image }}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,11 +36,11 @@ jobs:
           push: true
           platforms: linux/${{ matrix.platform }}
           tags: |
-              ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ matrix.platform }}-latest
-              ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ matrix.platform }}-${{ steps.globals.outputs.HASH }}
+            ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/metarisc:${{ matrix.image }}-${{ matrix.platform }}-latest
+            ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/metarisc:${{ matrix.image }}-${{ matrix.platform }}-${{ github.sha }}
           context: ${{ matrix.image }}
-          cache-from: type=gha,ref=${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ matrix.platform }}
-          cache-to: type=gha,ref=${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ matrix.platform }},mode=max
+          cache-from: type=gha,ref=${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/metarisc:${{ matrix.image }}-${{ matrix.platform }}
+          cache-to: type=gha,ref=${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/metarisc:${{ matrix.image }}-${{ matrix.platform }},mode=max
 
   manifest:
 
@@ -64,13 +53,6 @@ jobs:
 
     steps:
       
-      - name: Set globals
-        id: globals
-        shell: bash
-        run: |
-          echo "HASH=${{ env.hash }}" >> "${GITHUB_OUTPUT}"
-          echo "IMAGE_NAME=metarisc:${{ matrix.image }}" >> "${GITHUB_OUTPUT}"
-        
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -84,17 +66,9 @@ jobs:
       - name: Create and push manifest (latest and hash)
         shell: bash
         run: |
-          TAGS_LATEST=""
-          TAGS_HASH=""
-          for PLATFORM in ${{ env.platforms }}; do
-            TAGS_LATEST="$TAGS_LATEST ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${PLATFORM}-latest"
-            TAGS_HASH="$TAGS_HASH ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${PLATFORM}-${{ steps.globals.outputs.HASH }}"
+          for TAG in latest ${{ github.sha }}; do
+            docker buildx imagetools create \
+              --tag ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/metarisc:${{ matrix.image }}-${TAG} \
+              ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/metarisc:${{ matrix.image }}-amd64-${TAG} \
+              ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/metarisc:${{ matrix.image }}-arm64-${TAG}
           done
-
-          docker buildx imagetools create \
-            --tag ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-latest \
-            $TAGS_LATEST
-
-          docker buildx imagetools create \
-            --tag ${{ secrets.SCALEWAY_DOCKER_REGISTRY_NAMESPACE }}/${{ steps.globals.outputs.IMAGE_NAME }}-${{ steps.globals.outputs.HASH }} \
-            $TAGS_HASH
