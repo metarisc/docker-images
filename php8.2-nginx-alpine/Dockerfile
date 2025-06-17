@@ -52,6 +52,9 @@ COPY server/nginx_server.conf /etc/nginx/conf.d/default_template.conf
 RUN envsubst '${PORT}' < /etc/nginx/conf.d/default_template.conf > /etc/nginx/conf.d/default.conf
 RUN rm /etc/nginx/conf.d/default_template.conf
 
+# Make sure files/folders needed by the processes are accessible when they run under the www-data user
+RUN chown -R www-data:www-data /var/www/html /run /var/lib/nginx /var/log/nginx
+
 # Configure a healthcheck to validate that everything is up & running
 HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:${PORT}/fpm-ping
 

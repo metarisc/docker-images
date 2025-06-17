@@ -33,3 +33,6 @@ RUN apk add --no-cache sqlite \
 
 # PHP MySQL Database Extensions
 RUN install-php-extensions pdo_mysql
+
+# Make sure files/folders needed by the processes are accessible when they run under the www-data user
+RUN chown -R www-data:www-data /var/www/html /run
