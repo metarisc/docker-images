@@ -36,3 +36,10 @@ RUN install-php-extensions pdo_mysql
 
 # Make sure files/folders needed by the processes are accessible when they run under the www-data user
 RUN chown -R www-data:www-data /var/www/html /run
+
+# Setup Docker entrypoint (initialize container service)
+COPY docker-entrypoint.sh docker-entrypoint.sh
+RUN chmod +x docker-entrypoint.sh
+COPY /docker-entrypoint.d/* /docker-entrypoint.d/
+ONBUILD COPY /docker-entrypoint.d/* /docker-entrypoint.d/
+ENTRYPOINT ["./docker-entrypoint.sh"]

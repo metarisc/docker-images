@@ -22,6 +22,7 @@ La configuration de PHP est pré-configurée pour un usage général, mais peut 
 - En modifiant le fichier `/usr/local/etc/php/php.ini` pour adapter la configuration de PHP.
 - En ajoutant des fichiers de configuration supplémentaires dans le répertoire `/usr/local/etc/php/conf.d/`.
 - En ajoutant des extensions PHP supplémentaires via le script `docker-php-ext-install` ou `docker-php-ext-enable`.
+- En ajoutant des fichiers de configuration supplémentaires dans le répertoire `/docker-entrypoint.d/`.
 
 ### `php8.2-nginx-alpine`
 
@@ -29,9 +30,13 @@ Cette image contient PHP 8.2 avec Nginx, optimisée pour servir des applications
 Elle est également basée sur Alpine Linux pour une taille réduite et une exécution rapide.
 
 La configuration du couple FPM / Nginx est pré-configurée, il est possible de la personnaliser  :
+- En modifiant le fichier `/usr/local/etc/php/php.ini` pour adapter la configuration de PHP.
+- En ajoutant des fichiers de configuration supplémentaires dans le répertoire `/usr/local/etc/php/conf.d/`.
+- En ajoutant des extensions PHP supplémentaires via le script `docker-php-ext-install` ou `docker-php-ext-enable`.
 - En modifiant le fichier `/etc/nginx/nginx.conf` et `/etc/nginx/conf.d/default.conf` pour adapter la configuration de Nginx.
 - En modifiant le fichier `/usr/local/etc/php-fpm.d/www.conf` pour adapter la configuration de PHP-FPM.
 - En ajoutant des fichiers de configuration supplémentaires dans les répertoires `/etc/nginx/conf.d/` et `/usr/local/etc/php-fpm.d/`.
+- En ajoutant des fichiers de configuration supplémentaires dans le répertoire `/docker-entrypoint.d/`.
 
 Outils inclus :
 - [PHP 8.2 & FPM](https://hub.docker.com/layers/library/php/8.2-fpm-alpine/images/sha256-132d7ccc156178ced13ac3d88c105eef938394d63e2885f7f2ee8566d06eeb73)
