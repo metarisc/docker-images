@@ -62,8 +62,8 @@ HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:${PORT}/fpm-
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
 # Setup Docker entrypoint (initialize container service)
-COPY docker-entrypoint.sh docker-entrypoint.sh
-RUN chmod +x docker-entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/docker-metarisc-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-metarisc-entrypoint.sh
 COPY /docker-entrypoint.d/* /docker-entrypoint.d/
 ONBUILD COPY /docker-entrypoint.d*/* /docker-entrypoint.d/
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["docker-metarisc-entrypoint.sh"]

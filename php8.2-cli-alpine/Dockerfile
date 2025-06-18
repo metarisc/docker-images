@@ -38,8 +38,8 @@ RUN install-php-extensions pdo_mysql
 RUN chown -R www-data:www-data /var/www/html /run
 
 # Setup Docker entrypoint (initialize container service)
-COPY docker-entrypoint.sh docker-entrypoint.sh
-RUN chmod +x docker-entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/docker-metarisc-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-metarisc-entrypoint.sh
 COPY /docker-entrypoint.d/* /docker-entrypoint.d/
 ONBUILD COPY /docker-entrypoint.d*/* /docker-entrypoint.d/
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["docker-metarisc-entrypoint.sh"]
